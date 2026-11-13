@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven Seals Expo — Church Assignment and Lot-Drawing Tool</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel for dignified headers, Inter for crisp UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for refined icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cinzel', 'serif'],
+                    },
+                    colors: {
+                        parchment: '#FAF7F2',
+                        parchmentDark: '#F2ECE1',
+                        navy: {
+                            800: '#1E293B',
+                            900: '#131C31',
+                            950: '#0B1120'
+                        },
+                        burgundy: {
+                            700: '#7F1D1D',
+                            800: '#641717',
+                            900: '#4A1010'
+                        },
+                        gold: {
+                            400: '#EAB308',
+                            500: '#C59B27',
+                            600: '#A17A1A',
+                            100: '#FEF9E7'
+                        }
+                    },
+                    animation: {
+                        'reveal': 'revealCard 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-subtle': 'pulseSubtle 2s infinite'
+                    },
+                    keyframes: {
+                        revealCard: {
+                            '0%': { opacity: '0', transform: 'translateY(16px) scale(0.96)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        pulseSubtle: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.75' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FAF7F2;
+            color: #131C31;
+            background-image: radial-gradient(#E5DEC9 0.75px, transparent 0.75px);
+            background-size: 24px 24px;
+        }
+
+        /* Print styling for clean committee handouts */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-card {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+                break-inside: avoid;
+            }
+        }
+
+        /* Custom subtle scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F2ECE1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #C59B27;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-gold-500 selection:text-white">
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none no-print">
+        <div class="bg-navy-900 text-white px-5 py-3.5 rounded-xl shadow-2xl border border-gold-500/40 flex items-center gap-3">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-gold-400 text-lg"></i>
+            <span id="toast-message" class="text-sm font-medium">Action completed</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-navy-900 text-white border-b-4 border-gold-500 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 shrink-0">
+                        <img src="lift-youth-logo.png" alt="The Little Flock Tabernacle logo" class="h-full w-full object-contain">
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold uppercase tracking-widest text-gold-400">2026 LiFT Youth Convention</span>
+                        </div>
+                        <h1 class="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">Seven Seals Expo Topics Assignment</h1>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button onclick="openSealReferenceModal()" class="px-4 py-2.5 rounded-xl bg-navy-800 hover:bg-navy-950 text-parchment border border-gold-500/40 text-sm font-medium transition flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-book-bible text-gold-400"></i>
+                        <span id="header-topics-btn-label">Manage Seals & Topics (7)</span>
+                    </button>
+                    <button onclick="resetAllAssignments()" class="px-4 py-2.5 rounded-xl bg-burgundy-800 hover:bg-burgundy-700 text-white border border-burgundy-700 text-sm font-medium transition flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Clear Draw</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Print Header (Only visible when printing) -->
+    <div class="hidden print-only max-w-5xl mx-auto pt-6 pb-4 border-b-2 border-gray-800 mb-6 px-4">
+        <h1 class="font-serif text-2xl font-bold text-gray-900">Bible Expo — Official Seals & Presentation Topics Assignments</h1>
+        <p class="text-sm text-gray-600 mt-1" id="print-date-subtitle"></p>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- LEFT COLUMN: Participating Churches & Settings (5 cols on lg) -->
+            <section class="lg:col-span-5 space-y-6 no-print">
+                
+                <!-- Church Entry Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-200/90 overflow-hidden">
+                    <div class="bg-parchmentDark/60 px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-church text-burgundy-800"></i>
+                            <h2 class="font-serif font-bold text-lg text-navy-900">Participating Churches</h2>
+                        </div>
+                        <span id="church-count-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-navy-900 text-gold-400">
+                            0 Churches
+                        </span>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        <!-- Single Add Form -->
+                        <form id="add-church-form" class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="church-input" 
+                                placeholder="Enter church name (e.g. St. John's Parish)..." 
+                                class="flex-grow px-4 py-2.5 rounded-xl border border-stone-300 bg-parchment/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent text-sm transition"
+                                autocomplete="off"
+                            >
+                            <button 
+                                type="submit" 
+                                class="px-5 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-semibold text-sm transition shadow-sm shrink-0 flex items-center gap-1.5"
+                            >
+                                <i class="fa-solid fa-plus text-xs text-gold-400"></i> Add
+                            </button>
+                        </form>
+
+                        <!-- Quick Actions Row -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="toggleBulkDrawer()" class="text-burgundy-800 hover:text-burgundy-700 font-semibold underline decoration-burgundy-800/30 underline-offset-4 flex items-center gap-1 py-1">
+                                    <i class="fa-solid fa-list-ul"></i> Bulk Paste List
+                                </button>
+                                <span class="text-stone-300">|</span>
+                                <button type="button" onclick="loadSampleChurches()" class="text-navy-800 hover:text-gold-600 font-semibold underline decoration-navy-800/30 underline-offset-4 flex items-center gap-1 py-1">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Load 7 Sample Churches
+                                </button>
+                            </div>
+                            <button type="button" onclick="clearAllChurches()" id="clear-churches-btn" class="text-stone-400 hover:text-red-600 transition hidden">
+                                Clear all
+                            </button>
+                        </div>
+
+                        <!-- Collapsible Bulk Add Drawer -->
+                        <div id="bulk-drawer" class="hidden bg-parchment rounded-xl p-4 border border-stone-200 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label for="bulk-textarea" class="text-xs font-bold uppercase tracking-wider text-navy-900">Paste Church Names (Comma or Line Separated)</label>
+                                <button type="button" onclick="toggleBulkDrawer()" class="text-stone-400 hover:text-stone-700">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <textarea 
+                                id="bulk-textarea" 
+                                rows="4" 
+                                placeholder="Grace Community Church&#10;Mount Zion Tabernacle&#10;Trinity Fellowship, Faith Baptist Church"
+                                class="w-full p-3 rounded-lg border border-stone-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+                            ></textarea>
+                            <div class="flex justify-end gap-2">
+                                <button type="button" onclick="toggleBulkDrawer()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-200/60">Cancel</button>
+                                <button type="button" onclick="processBulkAdd()" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-burgundy-800 hover:bg-burgundy-700 text-white shadow-sm">Import Churches</button>
+                            </div>
+                        </div>
+
+                        <!-- Added Churches List -->
+                        <div class="pt-2">
+                            <div id="empty-churches-state" class="text-center py-8 px-4 rounded-xl border-2 border-dashed border-stone-200 bg-parchment/30">
+                                <i class="fa-solid fa-users-rectangle text-stone-300 text-2xl mb-2"></i>
+                                <p class="text-sm font-medium text-stone-600">No churches added yet</p>
+                                <p class="text-xs text-stone-400 mt-0.5">Add churches above or load the sample roster.</p>
+                            </div>
+                            <ul id="church-list" class="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+                                <!-- Church items dynamically rendered here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Allocation Rules & Active Pool Summary -->
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-200/90 p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-serif font-bold text-base text-navy-900 flex items-center gap-2">
+                            <i class="fa-solid fa-scale-balanced text-gold-600"></i>
+                            <span>Allocation Rules</span>
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <span id="active-pool-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-navy-900 text-gold-400">
+                                Active Pool: 7 Topics
+                            </span>
+                            <button type="button" onclick="openSealReferenceModal(true)" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-gold-100 hover:bg-gold-400/30 text-navy-900 border border-gold-500/40 transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add Custom Topic
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-parchment/70 border border-stone-200/80">
+                        <span class="text-xs font-medium text-stone-600">Roster vs. Topic Pool Balance:</span>
+                        <span id="mismatch-indicator" class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-600">
+                            7 Topics Available
+                        </span>
+                    </div>
+
+                    <div class="space-y-3 text-sm">
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-stone-200 bg-parchment/40 cursor-pointer hover:border-gold-500/50 transition">
+                            <input type="radio" name="overflowRule" value="cycle" checked onchange="updateOverflowRule(this.value)" class="mt-1 accent-burgundy-800">
+                            <div>
+                                <span id="rule-cycle-title" class="font-semibold text-navy-900 block">Allow Multiple Churches per Topic (If &gt; 7)</span>
+                                <span id="rule-cycle-desc" class="text-xs text-stone-500">Cycles evenly through all 7 active topics so every church receives an assignment.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-stone-200 bg-parchment/40 cursor-pointer hover:border-gold-500/50 transition">
+                            <input type="radio" name="overflowRule" value="strict" onchange="updateOverflowRule(this.value)" class="mt-1 accent-burgundy-800">
+                            <div>
+                                <span id="rule-strict-title" class="font-semibold text-navy-900 block">Strict 1-to-1 Limit (Max 7 Assignments)</span>
+                                <span class="text-xs text-stone-500">Each seal or topic is assigned at most once; excess churches remain on standby.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: Interactive Draw Controls & Results Board (7 cols on lg) -->
+            <section class="lg:col-span-7 space-y-6">
+                
+                <!-- Control Deck (Hidden on Print) -->
+                <div class="bg-navy-900 text-white rounded-2xl p-6 shadow-md border border-gold-500/30 no-print">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-navy-800">
+                        <div>
+                            <h2 class="font-serif text-xl font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-dice text-gold-400"></i>
+                                <span>Lot-Drawing Controls</span>
+                            </h2>
+                            <p class="text-xs text-stone-300 mt-1">Lock committee pre-selections below, then draw the remaining lots randomly.</p>
+                        </div>
+                        <div id="draw-status-pill" class="self-start sm:self-center px-3 py-1.5 rounded-xl bg-navy-800 border border-gold-500/30 text-xs font-semibold text-gold-400">
+                            Ready to Draw
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-5">
+                        <!-- Draw All At Once -->
+                        <button 
+                            id="btn-draw-all"
+                            onclick="startDrawAll()" 
+                            class="py-3.5 px-5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-navy-950 font-bold text-sm shadow-lg transition transform active:scale-[0.99] flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <i class="fa-solid fa-shuffle text-base"></i>
+                            <span>Random Draw (All at Once)</span>
+                        </button>
+
+                        <!-- Draw One By One -->
+                        <button 
+                            id="btn-draw-one"
+                            onclick="drawNextOneByOne()" 
+                            class="py-3.5 px-5 rounded-xl bg-burgundy-800 hover:bg-burgundy-700 text-white border border-gold-500/40 font-bold text-sm shadow-lg transition transform active:scale-[0.99] flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <i class="fa-solid fa-hand-sparkles text-gold-400 text-base"></i>
+                            <span id="btn-draw-one-label">Draw Next Lot (1 by 1)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Spotlight Banner (For 1-by-1 Reveal) -->
+                <div id="spotlight-banner" class="hidden bg-gradient-to-br from-burgundy-900 via-navy-900 to-navy-950 text-white rounded-2xl p-6 border-2 border-gold-500 shadow-xl animate-reveal no-print">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase tracking-widest text-gold-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-certificate"></i> Latest Lot Drawn
+                        </span>
+                        <button onclick="document.getElementById('spotlight-banner').classList.add('hidden')" class="text-stone-400 hover:text-white text-xs">
+                            Dismiss
+                        </button>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+                        <div>
+                            <div class="text-xs text-stone-300">Participating Church</div>
+                            <div id="spotlight-church" class="font-serif text-2xl font-bold text-white mt-0.5">—</div>
+                        </div>
+                        <div class="hidden sm:block text-gold-400 text-xl">
+                            <i class="fa-solid fa-arrow-right-long"></i>
+                        </div>
+                        <div class="sm:text-right">
+                            <div class="text-xs text-gold-400 font-semibold" id="spotlight-ref">—</div>
+                            <div id="spotlight-seal" class="font-serif text-xl font-bold text-gold-400 mt-0.5">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results & Committee Override Board -->
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-200/90 overflow-hidden print-card">
+                    <div class="bg-parchmentDark/60 px-6 py-4 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="font-serif font-bold text-lg text-navy-900">Expo Seal Assignments</h2>
+                            <p class="text-xs text-stone-500 no-print">Use the dropdown on any row to manually assign & lock a seal for committee selection.</p>
+                        </div>
+
+                        <!-- Export Actions -->
+                        <div class="flex items-center gap-2 no-print">
+                            <button onclick="copyResultsToClipboard()" id="btn-copy" class="px-3.5 py-2 rounded-xl bg-white hover:bg-parchment border border-stone-300 text-navy-900 text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-regular fa-copy text-burgundy-800"></i>
+                                <span>Copy Memo</span>
+                            </button>
+                            <button onclick="downloadCSV()" class="px-3.5 py-2 rounded-xl bg-white hover:bg-parchment border border-stone-300 text-navy-900 text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-file-csv text-gold-600"></i>
+                                <span>CSV</span>
+                            </button>
+                            <button onclick="printAssignments()" class="px-3.5 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-print text-gold-400"></i>
+                                <span>Print</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Empty Board Placeholder -->
+                    <div id="empty-board-state" class="p-12 text-center">
+                        <div class="w-16 h-16 rounded-2xl bg-parchment border border-stone-200 flex items-center justify-center mx-auto mb-4 text-gold-600">
+                            <i class="fa-solid fa-scroll text-2xl"></i>
+                        </div>
+                        <h3 class="font-serif font-bold text-navy-900 text-lg">Awaiting Participating Churches</h3>
+                        <p class="text-sm text-stone-500 max-w-md mx-auto mt-1.5">
+                            Add participating churches on the left panel to begin assigning the Seven Seals and custom expo topics via random draw or committee selection.
+                        </p>
+                    </div>
+
+                    <!-- Assignments Table / Cards -->
+                    <div id="assignments-container" class="hidden divide-y divide-stone-200">
+                        <!-- Assignment rows dynamically rendered here -->
+                    </div>
+                </div>
+
+                <!-- Unassigned Seals Summary (Helpful when < total topics) -->
+                <div id="unassigned-seals-box" class="hidden bg-parchmentDark/50 rounded-2xl p-5 border border-stone-200/80 no-print">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-navy-900 flex items-center gap-2">
+                            <i class="fa-solid fa-hourglass-half text-burgundy-800"></i>
+                            <span>Remaining Unassigned Seals & Topics (<span id="unassigned-count">0</span>)</span>
+                        </h4>
+                    </div>
+                    <div id="unassigned-seals-list" class="flex flex-wrap gap-2">
+                        <!-- Badges for remaining seals -->
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-stone-200/80 bg-white/60 py-5 mt-12 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-stone-500">
+            <span>Bible Expo Organizing Committee — Seven Seals & Custom Topics Allocation System</span>
+            <span>Core Scripture References: Revelation 6:1–17; 8:1–2</span>
+        </div>
+    </footer>
+
+    <!-- SEALS & CUSTOM TOPICS MANAGER MODAL -->
+    <div id="seal-modal" class="fixed inset-0 z-50 hidden bg-navy-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gold-500/40 overflow-hidden animate-reveal">
+            <div class="bg-navy-900 text-white px-6 py-4 flex items-center justify-between border-b-2 border-gold-500">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-book-bible text-gold-400"></i>
+                    <div>
+                        <h3 class="font-serif font-bold text-lg">Manage Seals & Custom Topics</h3>
+                        <p class="text-[11px] text-stone-300">Edit the Seven Seals or add extra custom presentation booths (8th, 9th, 10th+)</p>
+                    </div>
+                </div>
+                <button onclick="closeSealReferenceModal()" class="text-stone-300 hover:text-white p-1.5 rounded-lg hover:bg-navy-800 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-5 bg-parchment/40">
+                
+                <!-- Quick-Add Custom Topic Inline Bar -->
+                <div id="quick-add-topic-card" class="bg-white rounded-xl p-4 border-2 border-gold-500/50 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-navy-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-sparkles text-gold-600"></i>
+                            <span id="quick-add-heading">Add Custom Presentation Topic (Topic #8)</span>
+                        </h4>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="fillTopicPreset('Expo Overview / Introduction', 'Revelation 4–5', 'The Heavenly Throne Room, the Scroll with Seven Seals, and the Worthy Lamb.')" class="text-[11px] px-2 py-0.5 rounded bg-parchment hover:bg-parchmentDark text-navy-900 border border-stone-200 font-medium transition">
+                                + Preset: Intro
+                            </button>
+                            <button type="button" onclick="fillTopicPreset('The Seven Trumpets Preview', 'Revelation 8:2–6', 'Transition from the Seventh Seal to the Seven Angels preparing to sound the trumpets.')" class="text-[11px] px-2 py-0.5 rounded bg-parchment hover:bg-parchmentDark text-navy-900 border border-stone-200 font-medium transition">
+                                + Preset: Trumpets
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="add-custom-topic-form" onsubmit="handleAddCustomTopic(event)" class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <div class="sm:col-span-2">
+                                <label class="block text-[11px] font-semibold text-stone-600 mb-1">Topic Title *</label>
+                                <input 
+                                    type="text" 
+                                    id="new-topic-title" 
+                                    required
+                                    placeholder="e.g. Expo Overview / Introduction" 
+                                    class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-parchment/30 focus:bg-white text-xs font-medium text-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500"
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-600 mb-1">Scripture / Subtitle</label>
+                                <input 
+                                    type="text" 
+                                    id="new-topic-scripture" 
+                                    placeholder="e.g. Revelation 5:1–14" 
+                                    class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-parchment/30 focus:bg-white text-xs font-medium text-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500"
+                                >
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2.5">
+                            <input 
+                                type="text" 
+                                id="new-topic-desc" 
+                                placeholder="Brief booth focus or description (optional)..." 
+                                class="flex-grow px-3 py-2 rounded-lg border border-stone-300 bg-parchment/30 focus:bg-white text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-gold-500"
+                            >
+                            <button 
+                                type="submit" 
+                                class="px-4 py-2 rounded-lg bg-burgundy-800 hover:bg-burgundy-700 text-white text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5 shrink-0"
+                            >
+                                <i class="fa-solid fa-plus text-gold-400"></i>
+                                <span>+ Add Custom Topic</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Active Seals & Topics List -->
+                <div class="flex items-center justify-between pt-1">
+                    <span id="modal-pool-summary" class="text-xs font-bold uppercase tracking-wider text-navy-900">
+                        Active Presentation Pool (7 Topics)
+                    </span>
+                    <span class="text-[11px] text-stone-500">Custom topics can be removed anytime</span>
+                </div>
+
+                <div id="seal-editor-list" class="space-y-3">
+                    <!-- Editable seal & custom topic cards rendered here -->
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-white border-t border-stone-200 flex flex-wrap items-center justify-between gap-3">
+                <button type="button" onclick="resetDefaultSeals()" class="text-xs font-semibold text-burgundy-800 hover:underline flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Reset to Default 7 Seals</span>
+                </button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeSealReferenceModal()" class="px-5 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-white text-sm font-semibold shadow-sm transition">
+                        Save & Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. STATE & DEFAULT DATA
+        // =========================================================================
+        const DEFAULT_SEALS = [
+            {
+                id: 1,
+                numberLabel: "1st Seal",
+                title: "White Horse — Conquest",
+                scripture: "Revelation 6:1–2",
+                symbol: "Crown & Bow",
+                icon: "fa-chess-knight",
+                badgeColor: "bg-slate-100 text-slate-800 border-slate-300",
+                description: "A rider on a white horse holding a bow, given a crown, riding out as a conqueror bent on conquest.",
+                isCustom: false
+            },
+            {
+                id: 2,
+                numberLabel: "2nd Seal",
+                title: "Red Horse — War & Conflict",
+                scripture: "Revelation 6:3–4",
+                symbol: "Great Sword",
+                icon: "fa-khanda",
+                badgeColor: "bg-red-50 text-red-900 border-red-200",
+                description: "A fiery red horse whose rider is granted power to take peace from the earth.",
+                isCustom: false
+            },
+            {
+                id: 3,
+                numberLabel: "3rd Seal",
+                title: "Black Horse — Famine & Scarcity",
+                scripture: "Revelation 6:5–6",
+                symbol: "Pair of Scales",
+                icon: "fa-scale-unbalanced",
+                badgeColor: "bg-zinc-800 text-amber-200 border-zinc-700",
+                description: "A black horse whose rider holds a pair of scales, signaling economic hardship and famine.",
+                isCustom: false
+            },
+            {
+                id: 4,
+                numberLabel: "4th Seal",
+                title: "Pale Horse — Death & Hades",
+                scripture: "Revelation 6:7–8",
+                symbol: "Ashen Pale Rider",
+                icon: "fa-skull",
+                badgeColor: "bg-emerald-50 text-emerald-900 border-emerald-200",
+                description: "A pale horse named Death, with Hades following close behind, given authority over a fourth of the earth.",
+                isCustom: false
+            },
+            {
+                id: 5,
+                numberLabel: "5th Seal",
+                title: "Martyrs Under the Altar",
+                scripture: "Revelation 6:9–11",
+                symbol: "White Robes & Altar",
+                icon: "fa-fire-flame-curved",
+                badgeColor: "bg-amber-50 text-amber-900 border-amber-300",
+                description: "The souls of those slain for the word of God crying out beneath the heavenly altar, each given a white robe.",
+                isCustom: false
+            },
+            {
+                id: 6,
+                numberLabel: "6th Seal",
+                title: "Cosmic Disturbances",
+                scripture: "Revelation 6:12–17",
+                symbol: "Earthquake, Sun & Moon",
+                icon: "fa-sun",
+                badgeColor: "bg-purple-50 text-purple-900 border-purple-200",
+                description: "A great earthquake; the sun turns black like sackcloth, the full moon turns blood red, and stars fall.",
+                isCustom: false
+            },
+            {
+                id: 7,
+                numberLabel: "7th Seal",
+                title: "Silence in Heaven & Seven Trumpets",
+                scripture: "Revelation 8:1–2",
+                symbol: "Golden Censer & Trumpets",
+                icon: "fa-bullhorn",
+                badgeColor: "bg-gold-100 text-navy-900 border-gold-500/50",
+                description: "Silence in heaven for about half an hour, followed by seven angels standing before God with seven trumpets.",
+                isCustom: false
+            }
+        ];
+
+        // Rotating visual styles for custom topics added beyond the 7 Seals
+        const CUSTOM_TOPIC_STYLES = [
+            { badgeColor: "bg-sky-50 text-sky-900 border-sky-200", icon: "fa-landmark" },
+            { badgeColor: "bg-teal-50 text-teal-900 border-teal-200", icon: "fa-compass" },
+            { badgeColor: "bg-indigo-50 text-indigo-900 border-indigo-200", icon: "fa-star-and-crescent" },
+            { badgeColor: "bg-rose-50 text-rose-900 border-rose-200", icon: "fa-crown" },
+            { badgeColor: "bg-orange-50 text-orange-900 border-orange-200", icon: "fa-scroll" },
+            { badgeColor: "bg-cyan-50 text-cyan-900 border-cyan-200", icon: "fa-book-open-reader" }
+        ];
+
+        // Clone seals so user edits & additions don't mutate constant defaults
+        let seals = JSON.parse(JSON.stringify(DEFAULT_SEALS));
+
+        // Array of church objects: { id: string, name: string, sealId: number | null, locked: boolean, standby: boolean, justRevealed: boolean }
+        let churches = [];
+        let overflowRule = 'cycle'; // 'cycle' or 'strict'
+        let isShuffling = false;
+        const APP_STATE_STORAGE_KEY = 'seven-seals-expo-state-v1';
+        let storageWarningShown = false;
+
+        // =========================================================================
+        // 2. INITIALIZATION & UTILITY FUNCTIONS
+        // =========================================================================
+        function isValidSavedSeal(seal) {
+            return seal && typeof seal === 'object'
+                && Number.isInteger(seal.id)
+                && typeof seal.numberLabel === 'string'
+                && typeof seal.title === 'string'
+                && typeof seal.scripture === 'string'
+                && typeof seal.symbol === 'string'
+                && typeof seal.icon === 'string'
+                && typeof seal.badgeColor === 'string'
+                && typeof seal.description === 'string'
+                && typeof seal.isCustom === 'boolean';
+        }
+
+        function isValidSavedChurch(church) {
+            return church && typeof church === 'object'
+                && typeof church.id === 'string'
+                && typeof church.name === 'string'
+                && church.name.trim().length > 0
+                && (church.sealId === null || Number.isInteger(church.sealId))
+                && typeof church.locked === 'boolean'
+                && typeof church.standby === 'boolean';
+        }
+
+        function loadAppState() {
+            try {
+                const storedState = window.localStorage.getItem(APP_STATE_STORAGE_KEY);
+                if (!storedState) return false;
+
+                const state = JSON.parse(storedState);
+                const validSealIds = new Set(Array.isArray(state?.seals) ? state.seals.map(seal => seal?.id) : []);
+                const valid =
+                    state?.version === 1
+                    && Array.isArray(state.seals)
+                    && state.seals.length > 0
+                    && state.seals.every(isValidSavedSeal)
+                    && validSealIds.size === state.seals.length
+                    && Array.isArray(state.churches)
+                    && state.churches.every(isValidSavedChurch)
+                    && new Set(state.churches.map(church => church.id)).size === state.churches.length
+                    && state.churches.every(church => church.sealId === null || validSealIds.has(church.sealId))
+                    && (state.overflowRule === 'cycle' || state.overflowRule === 'strict');
+
+                if (!valid) {
+                    throw new Error('Saved browser data has an unsupported or invalid shape.');
+                }
+
+                seals = state.seals;
+                churches = state.churches.map(church => ({ ...church, justRevealed: false }));
+                overflowRule = state.overflowRule;
+                return true;
+            } catch (error) {
+                console.error('Unable to restore the saved church roster.', error);
+                if (!storageWarningShown) {
+                    storageWarningShown = true;
+                    showToast('Saved browser data could not be restored. Starting with a fresh roster.', 'fa-circle-exclamation');
+                }
+                return false;
+            }
+        }
+
+        function saveAppState() {
+            try {
+                const state = {
+                    version: 1,
+                    churches: churches.map(({ justRevealed, ...church }) => church),
+                    seals,
+                    overflowRule
+                };
+                window.localStorage.setItem(APP_STATE_STORAGE_KEY, JSON.stringify(state));
+            } catch (error) {
+                console.error('Unable to save the church roster in this browser.', error);
+                if (!storageWarningShown) {
+                    storageWarningShown = true;
+                    showToast('Could not save this roster in your browser. Changes may be lost after refresh.', 'fa-circle-exclamation');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('add-church-form');
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const input = document.getElementById('church-input');
+                addChurch(input.value);
+                input.value = '';
+                input.focus();
+            });
+
+            const restoredSavedState = loadAppState();
+            document.querySelectorAll('input[name="overflowRule"]').forEach(input => {
+                input.checked = input.value === overflowRule;
+            });
+            renderAll();
+            if (restoredSavedState) {
+                showToast('Restored your saved roster and draw from this browser.');
+            }
+        });
+
+        function generateId() {
+            return 'ch_' + Math.random().toString(36).substring(2, 9);
+        }
+
+        function showToast(message, iconClass = 'fa-circle-check') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            document.getElementById('toast-icon').className = `fa-solid ${iconClass} text-gold-400 text-lg`;
+            
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // =========================================================================
+        // 3. CHURCH MANAGEMENT (ADD, BULK, SAMPLE, REMOVE)
+        // =========================================================================
+        function addChurch(rawName) {
+            const name = rawName.trim();
+            if (!name) return;
+
+            // Check duplicate case-insensitively
+            const exists = churches.some(c => c.name.toLowerCase() === name.toLowerCase());
+            if (exists) {
+                showToast(`"${name}" is already on the list.`, 'fa-circle-exclamation');
+                return;
+            }
+
+            churches.push({
+                id: generateId(),
+                name: name,
+                sealId: null,
+                locked: false,
+                standby: false,
+                justRevealed: false
+            });
+
+            renderAll();
+        }
+
+        function toggleBulkDrawer() {
+            const drawer = document.getElementById('bulk-drawer');
+            drawer.classList.toggle('hidden');
+            if (!drawer.classList.contains('hidden')) {
+                document.getElementById('bulk-textarea').focus();
+            }
+        }
+
+        function processBulkAdd() {
+            const textarea = document.getElementById('bulk-textarea');
+            const rawText = textarea.value;
+            if (!rawText.trim()) return;
+
+            // Split by newlines or commas
+            const entries = rawText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+            let addedCount = 0;
+
+            entries.forEach(name => {
+                const exists = churches.some(c => c.name.toLowerCase() === name.toLowerCase());
+                if (!exists) {
+                    churches.push({
+                        id: generateId(),
+                        name: name,
+                        sealId: null,
+                        locked: false,
+                        standby: false,
+                        justRevealed: false
+                    });
+                    addedCount++;
+                }
+            });
+
+            textarea.value = '';
+            toggleBulkDrawer();
+            renderAll();
+
+            if (addedCount > 0) {
+                showToast(`Added ${addedCount} church${addedCount === 1 ? '' : 'es'} to the roster.`);
+            } else {
+                showToast('No new unique church names found.', 'fa-circle-info');
+            }
+        }
+
+        function loadSampleChurches() {
+            const samples = [
+                "Grace Community Church",
+                "Mount Zion Tabernacle",
+                "St. Jude's Parish",
+                "New Covenant Fellowship",
+                "Bethel Apostolic Assembly",
+                "Trinity Lighthouse Church",
+                "Calvary Heritage Ministries"
+            ];
+
+            churches = samples.map(name => ({
+                id: generateId(),
+                name,
+                sealId: null,
+                locked: false,
+                standby: false,
+                justRevealed: false
+            }));
+
+            document.getElementById('spotlight-banner').classList.add('hidden');
+            renderAll();
+            showToast('Loaded 7 sample participating churches.');
+        }
+
+        function removeChurch(id) {
+            churches = churches.filter(c => c.id !== id);
+            renderAll();
+        }
+
+        function clearAllChurches() {
+            churches = [];
+            document.getElementById('spotlight-banner').classList.add('hidden');
+            renderAll();
+            showToast('Cleared all churches.');
+        }
+
+        function updateOverflowRule(rule) {
+            overflowRule = rule;
+            // Clear unlocked standby states when switching rules
+            churches.forEach(c => {
+                if (!c.locked) {
+                    c.standby = false;
+                }
+            });
+            renderAll();
+        }
+
+        // =========================================================================
+        // 4. SEAL POOL & ASSIGNMENT ENGINE
+        // =========================================================================
+        /**
+         * Builds the available pool of Seal IDs taking into account:
+         * - Already locked (committee-assigned) seals
+         * - Already drawn seals (for 1-by-1 mode)
+         * - Overflow rules ('cycle' vs 'strict')
+         */
+        function getAvailableSealPool() {
+            const totalChurches = churches.length;
+            const assignedSealIds = churches
+                .filter(c => c.sealId !== null)
+                .map(c => c.sealId);
+
+            // Count how many times each seal (1..7) is currently assigned
+            const counts = {};
+            seals.forEach(s => counts[s.id] = 0);
+            assignedSealIds.forEach(id => {
+                if (counts[id] !== undefined) counts[id]++;
+            });
+
+            if (overflowRule === 'strict') {
+                // Only seals with count === 0 are available
+                return seals.filter(s => counts[s.id] === 0).map(s => s.id);
+            } else {
+                // 'cycle' mode: Determine target max copies per seal based on total churches
+                // e.g., for 9 churches, each seal can appear at most ceil(9/7) = 2 times,
+                // prioritizing seals that currently have the minimum count.
+                const minCount = Math.min(...Object.values(counts));
+                const maxAllowed = Math.max(1, Math.ceil(totalChurches / seals.length));
+
+                if (minCount >= maxAllowed) {
+                    return [];
+                }
+
+                // Prefer seals at the current lowest usage tier for balanced distribution
+                return seals.filter(s => counts[s.id] === minCount).map(s => s.id);
+            }
+        }
+
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        // Manual Committee Assignment / Override
+        function handleManualSealChange(churchId, value) {
+            const church = churches.find(c => c.id === churchId);
+            if (!church) return;
+
+            church.justRevealed = false;
+
+            if (value === "") {
+                church.sealId = null;
+                church.locked = false;
+                church.standby = false;
+            } else if (value === "STANDBY") {
+                church.sealId = null;
+                church.locked = true;
+                church.standby = true;
+            } else {
+                church.sealId = parseInt(value, 10);
+                church.locked = true;
+                church.standby = false;
+            }
+
+            renderAll();
+            if (church.locked && church.sealId) {
+                const seal = seals.find(s => s.id === church.sealId);
+                showToast(`Locked ${seal.numberLabel} to ${church.name}`, 'fa-lock');
+            }
+        }
+
+        function toggleLock(churchId) {
+            const church = churches.find(c => c.id === churchId);
+            if (!church || (church.sealId === null && !church.standby)) return;
+            church.locked = !church.locked;
+            renderAll();
+        }
+
+        function resetAllAssignments() {
+            churches.forEach(c => {
+                if (!c.locked) {
+                    c.sealId = null;
+                    c.standby = false;
+                    c.justRevealed = false;
+                }
+            });
+            document.getElementById('spotlight-banner').classList.add('hidden');
+            renderAll();
+            showToast('Cleared unlocked assignments (locked items preserved).');
+        }
+
+        // MODE A: Random Draw (All at Once) with live shuffle animation
+        function startDrawAll() {
+            if (churches.length === 0 || isShuffling) return;
+
+            // Reset unlocked churches before drawing
+            churches.forEach(c => {
+                if (!c.locked) {
+                    c.sealId = null;
+                    c.standby = false;
+                    c.justRevealed = false;
+                }
+            });
+
+            const unlockedChurches = churches.filter(c => !c.locked);
+            if (unlockedChurches.length === 0) {
+                showToast('All churches are currently locked by the committee.', 'fa-lock');
+                return;
+            }
+
+            isShuffling = true;
+            document.getElementById('spotlight-banner').classList.add('hidden');
+            updateControlsState();
+
+            // Visual shuffle ticks before settling on final draw
+            let ticks = 0;
+            const maxTicks = 10;
+            const interval = setInterval(() => {
+                ticks++;
+                unlockedChurches.forEach(c => {
+                    const randomSeal = seals[Math.floor(Math.random() * seals.length)];
+                    c.sealId = randomSeal.id;
+                });
+                renderAssignmentsBoard(true);
+
+                if (ticks >= maxTicks) {
+                    clearInterval(interval);
+                    finalizeDrawAll();
+                }
+            }, 75);
+        }
+
+        function finalizeDrawAll() {
+            // Reset unlocked first to compute clean balanced pool
+            churches.forEach(c => {
+                if (!c.locked) {
+                    c.sealId = null;
+                    c.standby = false;
+                }
+            });
+
+            const unlockedChurches = shuffleArray(churches.filter(c => !c.locked));
+
+            unlockedChurches.forEach(church => {
+                const pool = getAvailableSealPool();
+                if (pool.length > 0) {
+                    const chosenSealId = pool[Math.floor(Math.random() * pool.length)];
+                    church.sealId = chosenSealId;
+                    church.standby = false;
+                    church.justRevealed = true;
+                } else {
+                    church.sealId = null;
+                    church.standby = true;
+                    church.justRevealed = true;
+                }
+            });
+
+            isShuffling = false;
+            renderAll();
+            showToast('All participating churches have been assigned!');
+        }
+
+        // MODE B: Draw One by One
+        function drawNextOneByOne() {
+            if (churches.length === 0 || isShuffling) return;
+
+            // Clear previous highlight
+            churches.forEach(c => c.justRevealed = false);
+
+            // Find churches that haven't been assigned or put on standby yet
+            const pendingChurches = churches.filter(c => !c.locked && c.sealId === null && !c.standby);
+
+            if (pendingChurches.length === 0) {
+                showToast('All churches have already been drawn! Click "Clear Draw" to restart.', 'fa-circle-info');
+                return;
+            }
+
+            // Pick a random pending church
+            const chosenChurch = pendingChurches[Math.floor(Math.random() * pendingChurches.length)];
+            const pool = getAvailableSealPool();
+
+            if (pool.length > 0) {
+                const chosenSealId = pool[Math.floor(Math.random() * pool.length)];
+                chosenChurch.sealId = chosenSealId;
+                chosenChurch.standby = false;
+                chosenChurch.justRevealed = true;
+
+                const seal = seals.find(s => s.id === chosenSealId);
+                showSpotlight(chosenChurch.name, seal);
+            } else {
+                chosenChurch.sealId = null;
+                chosenChurch.standby = true;
+                chosenChurch.justRevealed = true;
+                showSpotlight(chosenChurch.name, null);
+            }
+
+            renderAll();
+        }
+
+        function showSpotlight(churchName, seal) {
+            const banner = document.getElementById('spotlight-banner');
+            document.getElementById('spotlight-church').textContent = churchName;
+
+            if (seal) {
+                document.getElementById('spotlight-ref').textContent = seal.scripture;
+                document.getElementById('spotlight-seal').textContent = `${seal.numberLabel}: ${seal.title}`;
+            } else {
+                document.getElementById('spotlight-ref').textContent = "Strict 1-to-1 Limit Reached";
+                document.getElementById('spotlight-seal').textContent = "Placed on Standby / Reserve";
+            }
+
+            // Re-trigger animation
+            banner.classList.remove('hidden');
+            banner.classList.remove('animate-reveal');
+            void banner.offsetWidth;
+            banner.classList.add('animate-reveal');
+        }
+
+        // =========================================================================
+        // 5. RENDERING UI
+        // =========================================================================
+        function renderAll() {
+            updateTopicPoolLabels();
+            renderChurchList();
+            renderAssignmentsBoard(false);
+            renderUnassignedSeals();
+            updateControlsState();
+            saveAppState();
+        }
+
+        function updateTopicPoolLabels() {
+            const topicCount = seals.length;
+            const headerBtnLabel = document.getElementById('header-topics-btn-label');
+            const activePoolBadge = document.getElementById('active-pool-badge');
+            const ruleCycleTitle = document.getElementById('rule-cycle-title');
+            const ruleCycleDesc = document.getElementById('rule-cycle-desc');
+            const ruleStrictTitle = document.getElementById('rule-strict-title');
+
+            if (headerBtnLabel) {
+                headerBtnLabel.textContent = `Manage Seals & Topics (${topicCount})`;
+            }
+            if (activePoolBadge) {
+                activePoolBadge.textContent = `Active Pool: ${topicCount} Topic${topicCount === 1 ? '' : 's'}`;
+            }
+            if (ruleCycleTitle) {
+                ruleCycleTitle.innerHTML = `Allow Multiple Churches per Topic (If &gt; ${topicCount})`;
+            }
+            if (ruleCycleDesc) {
+                ruleCycleDesc.textContent = `Cycles evenly through all ${topicCount} active topics so every church receives an assignment.`;
+            }
+            if (ruleStrictTitle) {
+                ruleStrictTitle.textContent = `Strict 1-to-1 Limit (Max ${topicCount} Assignments)`;
+            }
+        }
+
+        function renderChurchList() {
+            const listEl = document.getElementById('church-list');
+            const emptyState = document.getElementById('empty-churches-state');
+            const badge = document.getElementById('church-count-badge');
+            const clearBtn = document.getElementById('clear-churches-btn');
+            const mismatchBadge = document.getElementById('mismatch-indicator');
+
+            const count = churches.length;
+            const topicCount = seals.length;
+            badge.textContent = `${count} Church${count === 1 ? '' : 'es'}`;
+
+            if (count === 0) {
+                emptyState.classList.remove('hidden');
+                listEl.innerHTML = '';
+                clearBtn.classList.add('hidden');
+                mismatchBadge.textContent = `${topicCount} Topic${topicCount === 1 ? '' : 's'} Available`;
+                mismatchBadge.className = 'text-xs font-medium px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-600';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            clearBtn.classList.remove('hidden');
+
+            if (count === topicCount) {
+                mismatchBadge.textContent = `Exact ${topicCount}-to-${topicCount} Match`;
+                mismatchBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+            } else if (count < topicCount) {
+                const diff = topicCount - count;
+                mismatchBadge.textContent = `${diff} Topic${diff === 1 ? '' : 's'} Will Remain Unassigned`;
+                mismatchBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800';
+            } else {
+                const extra = count - topicCount;
+                mismatchBadge.textContent = `${extra} Extra Church${extra === 1 ? '' : 'es'} (>${topicCount})`;
+                mismatchBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full bg-burgundy-800/10 text-burgundy-800';
+            }
+
+            listEl.innerHTML = churches.map((church, idx) => {
+                const assignedSeal = church.sealId ? seals.find(s => s.id === church.sealId) : null;
+                return `
+                    <li class="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-parchment/70 border border-stone-200/80 group hover:border-gold-500/50 transition">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="w-6 h-6 rounded-lg bg-navy-900 text-gold-400 text-xs font-bold flex items-center justify-center shrink-0">
+                                ${idx + 1}
+                            </span>
+                            <span class="text-sm font-medium text-navy-900 truncate" title="${escapeHTML(church.name)}">
+                                ${escapeHTML(church.name)}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${assignedSeal ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-gold-100 text-navy-900 border border-gold-500/40">${escapeHTML(assignedSeal.numberLabel)}</span>` : ''}
+                            ${church.standby ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-stone-200 text-stone-700">Standby</span>` : ''}
+                            <button onclick="removeChurch('${church.id}')" title="Remove church" class="text-stone-400 hover:text-red-600 p-1 rounded-lg transition">
+                                <i class="fa-solid fa-xmark text-sm"></i>
+                            </button>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        function renderAssignmentsBoard(isAnimatingTick) {
+            const container = document.getElementById('assignments-container');
+            const emptyBoard = document.getElementById('empty-board-state');
+
+            if (churches.length === 0) {
+                emptyBoard.classList.remove('hidden');
+                container.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            emptyBoard.classList.add('hidden');
+            container.classList.remove('hidden');
+
+            container.innerHTML = churches.map((church, index) => {
+                const seal = church.sealId ? seals.find(s => s.id === church.sealId) : null;
+                const animClass = (!isAnimatingTick && church.justRevealed) ? 'animate-reveal bg-gold-100/30' : '';
+                const shuffleOpacity = (isAnimatingTick && !church.locked) ? 'opacity-70' : '';
+
+                // Build dropdown options for manual committee override
+                const optionsHtml = `
+                    <option value="" ${!seal && !church.standby ? 'selected' : ''}>— Unassigned (Pending Draw) —</option>
+                    ${seals.map(s => `
+                        <option value="${s.id}" ${seal && seal.id === s.id ? 'selected' : ''}>
+                            ${escapeHTML(s.numberLabel)}: ${escapeHTML(s.title)}
+                        </option>
+                    `).join('')}
+                    <option value="STANDBY" ${church.standby ? 'selected' : ''}>Standby / Reserve</option>
+                `;
+
+                return `
+                    <div class="p-5 sm:px-6 transition ${animClass} ${shuffleOpacity} hover:bg-parchment/30">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            
+                            <!-- Church Info -->
+                            <div class="space-y-1 min-w-0 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-stone-400">#${index + 1}</span>
+                                    <h3 class="font-serif font-bold text-base sm:text-lg text-navy-900 truncate">
+                                        ${escapeHTML(church.name)}
+                                    </h3>
+                                    ${church.locked ? `
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-burgundy-800 text-white" title="Locked by Committee">
+                                            <i class="fa-solid fa-lock text-[9px] text-gold-400"></i> Committee
+                                        </span>
+                                    ` : ''}
+                                </div>
+
+                                ${seal ? `
+                                    <div class="pt-1 flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border ${seal.badgeColor}">
+                                            <i class="fa-solid ${seal.icon}"></i>
+                                            ${escapeHTML(seal.numberLabel)}: ${escapeHTML(seal.title)}
+                                        </span>
+                                        <span class="text-xs font-semibold text-burgundy-800 bg-burgundy-800/5 px-2.5 py-1 rounded-lg border border-burgundy-800/15">
+                                            <i class="fa-solid fa-book-open mr-1 text-[10px]"></i>${escapeHTML(seal.scripture)}
+                                        </span>
+                                        <span class="text-xs text-stone-500 hidden sm:inline">
+                                            • Symbol: ${escapeHTML(seal.symbol)}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-stone-600 pt-1 leading-relaxed">
+                                        ${escapeHTML(seal.description)}
+                                    </p>
+                                ` : church.standby ? `
+                                    <div class="pt-1">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-stone-200 text-stone-700">
+                                            <i class="fa-solid fa-clock"></i> Standby / Reserve Church
+                                        </span>
+                                    </div>
+                                ` : `
+                                    <p class="text-xs text-stone-400 italic pt-0.5">
+                                        Awaiting lot draw or committee selection...
+                                    </p>
+                                `}
+                            </div>
+
+                            <!-- Committee Manual Override & Lock Controls (Hidden on Print) -->
+                            <div class="flex items-center gap-2 shrink-0 no-print">
+                                <select 
+                                    aria-label="Assign seal for ${escapeHTML(church.name)}"
+                                    onchange="handleManualSealChange('${church.id}', this.value)"
+                                    class="text-xs font-medium rounded-xl border border-stone-300 bg-white px-3 py-2 text-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500 max-w-[210px]"
+                                >
+                                    ${optionsHtml}
+                                </select>
+
+                                ${(seal || church.standby) ? `
+                                    <button 
+                                        type="button"
+                                        onclick="toggleLock('${church.id}')"
+                                        title="${church.locked ? 'Unlock so random draw can reassign' : 'Lock this assignment'}"
+                                        class="w-9 h-9 rounded-xl border flex items-center justify-center transition ${church.locked ? 'bg-burgundy-800 text-gold-400 border-burgundy-800' : 'bg-white text-stone-400 border-stone-300 hover:text-navy-900'}"
+                                    >
+                                        <i class="fa-solid ${church.locked ? 'fa-lock' : 'fa-lock-open'} text-xs"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderUnassignedSeals() {
+            const box = document.getElementById('unassigned-seals-box');
+            const list = document.getElementById('unassigned-seals-list');
+            const countSpan = document.getElementById('unassigned-count');
+
+            if (churches.length === 0) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            const assignedIds = new Set(churches.filter(c => c.sealId !== null).map(c => c.sealId));
+            const remaining = seals.filter(s => !assignedIds.has(s.id));
+
+            if (remaining.length === 0) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.classList.remove('hidden');
+            countSpan.textContent = remaining.length;
+            list.innerHTML = remaining.map(s => `
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-xs font-medium text-navy-900 shadow-2xs">
+                    <i class="fa-solid ${s.icon} text-gold-600"></i>
+                    <strong>${escapeHTML(s.numberLabel)}:</strong> ${escapeHTML(s.title)}
+                </span>
+            `).join('');
+        }
+
+        function updateControlsState() {
+            const btnAll = document.getElementById('btn-draw-all');
+            const btnOne = document.getElementById('btn-draw-one');
+            const btnOneLabel = document.getElementById('btn-draw-one-label');
+            const statusPill = document.getElementById('draw-status-pill');
+
+            const total = churches.length;
+            const pendingCount = churches.filter(c => !c.locked && c.sealId === null && !c.standby).length;
+            const assignedCount = churches.filter(c => c.sealId !== null || c.standby).length;
+
+            btnAll.disabled = total === 0 || isShuffling;
+            btnOne.disabled = total === 0 || pendingCount === 0 || isShuffling;
+
+            if (total === 0) {
+                statusPill.textContent = 'Add Churches to Start';
+                btnOneLabel.textContent = 'Draw Next Lot (1 by 1)';
+            } else if (isShuffling) {
+                statusPill.textContent = 'Drawing Lots...';
+            } else if (pendingCount === 0) {
+                statusPill.textContent = `Complete (${assignedCount}/${total} Assigned)`;
+                btnOneLabel.textContent = 'All Lots Drawn';
+            } else {
+                statusPill.textContent = `${pendingCount} Pending • ${assignedCount} Assigned`;
+                btnOneLabel.textContent = `Draw Next Lot (${pendingCount} left)`;
+            }
+        }
+
+        // =========================================================================
+        // 6. SEALS & CUSTOM TOPICS MANAGER MODAL
+        // =========================================================================
+        function openSealReferenceModal(focusAddInput = false) {
+            const modal = document.getElementById('seal-modal');
+            renderSealEditorList();
+            modal.classList.remove('hidden');
+
+            if (focusAddInput) {
+                setTimeout(() => {
+                    const titleInput = document.getElementById('new-topic-title');
+                    if (titleInput) titleInput.focus();
+                }, 60);
+            }
+        }
+
+        function renderSealEditorList() {
+            const list = document.getElementById('seal-editor-list');
+            const summaryLabel = document.getElementById('modal-pool-summary');
+            const quickAddHeading = document.getElementById('quick-add-heading');
+
+            const nextNum = seals.length + 1;
+            if (quickAddHeading) {
+                quickAddHeading.textContent = `Add Custom Presentation Topic (Topic #${nextNum})`;
+            }
+            if (summaryLabel) {
+                summaryLabel.textContent = `Active Presentation Pool (${seals.length} Topic${seals.length === 1 ? '' : 's'})`;
+            }
+
+            list.innerHTML = seals.map((seal, idx) => `
+                <div class="p-4 rounded-xl bg-white border ${seal.isCustom ? 'border-gold-500/50' : 'border-stone-200'} space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center gap-2 font-serif font-bold text-sm text-navy-900">
+                                <i class="fa-solid ${seal.icon} text-gold-600"></i>
+                                ${escapeHTML(seal.numberLabel)}
+                            </span>
+                            ${seal.isCustom ? `
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gold-100 text-navy-900 border border-gold-500/40">
+                                    Custom Topic
+                                </span>
+                            ` : ''}
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-semibold text-burgundy-800">${escapeHTML(seal.scripture || 'Custom Reference')}</span>
+                            ${seal.isCustom ? `
+                                <button type="button" onclick="deleteCustomTopic(${seal.id})" title="Delete custom topic" class="text-xs font-semibold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                                    <i class="fa-solid fa-trash-can text-[11px]"></i> Remove
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold uppercase text-stone-500 mb-1">Presentation Title</label>
+                            <input type="text" value="${escapeHTML(seal.title)}" onchange="updateSealField(${idx}, 'title', this.value)"
+                                class="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs font-medium text-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold uppercase text-stone-500 mb-1">Scripture Reference / Subtitle</label>
+                            <input type="text" value="${escapeHTML(seal.scripture)}" onchange="updateSealField(${idx}, 'scripture', this.value)"
+                                class="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs font-medium text-navy-900 focus:outline-none focus:ring-2 focus:ring-gold-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold uppercase text-stone-500 mb-1">Brief Description / Expo Focus</label>
+                        <input type="text" value="${escapeHTML(seal.description)}" onchange="updateSealField(${idx}, 'description', this.value)"
+                            class="w-full px-3 py-1.5 rounded-lg border border-stone-300 text-xs text-stone-700 focus:outline-none focus:ring-2 focus:ring-gold-500">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function fillTopicPreset(title, scripture, desc) {
+            document.getElementById('new-topic-title').value = title;
+            document.getElementById('new-topic-scripture').value = scripture;
+            document.getElementById('new-topic-desc').value = desc;
+            document.getElementById('new-topic-title').focus();
+        }
+
+        function handleAddCustomTopic(event) {
+            event.preventDefault();
+            const titleEl = document.getElementById('new-topic-title');
+            const scriptureEl = document.getElementById('new-topic-scripture');
+            const descEl = document.getElementById('new-topic-desc');
+
+            const title = titleEl.value.trim();
+            if (!title) return;
+
+            const scripture = scriptureEl.value.trim() || "Expo Special Topic";
+            const description = descEl.value.trim() || "Custom expo presentation booth assigned by the organizing committee.";
+
+            const maxId = seals.reduce((max, s) => Math.max(max, s.id), 7);
+            const newId = maxId + 1;
+            const topicNumber = seals.length + 1;
+            const stylePreset = CUSTOM_TOPIC_STYLES[(topicNumber - 8 + CUSTOM_TOPIC_STYLES.length) % CUSTOM_TOPIC_STYLES.length];
+
+            seals.push({
+                id: newId,
+                numberLabel: `Topic #${topicNumber}`,
+                title: title,
+                scripture: scripture,
+                symbol: "Custom Expo Booth",
+                icon: stylePreset.icon,
+                badgeColor: stylePreset.badgeColor,
+                description: description,
+                isCustom: true
+            });
+
+            titleEl.value = '';
+            scriptureEl.value = '';
+            descEl.value = '';
+
+            renderSealEditorList();
+            renderAll();
+            showToast(`Added "${title}" to the active pool (${seals.length} topics).`);
+        }
+
+        function deleteCustomTopic(topicId) {
+            const removed = seals.find(s => s.id === topicId);
+            seals = seals.filter(s => s.id !== topicId);
+
+            // Re-number custom topic labels cleanly (e.g., Topic #8, Topic #9...)
+            seals.forEach((s, index) => {
+                if (s.isCustom) {
+                    s.numberLabel = `Topic #${index + 1}`;
+                }
+            });
+
+            // Unassign any church that was assigned the deleted custom topic
+            churches.forEach(c => {
+                if (c.sealId === topicId) {
+                    c.sealId = null;
+                    c.locked = false;
+                    c.standby = false;
+                    c.justRevealed = false;
+                }
+            });
+
+            renderSealEditorList();
+            renderAll();
+            if (removed) {
+                showToast(`Removed "${removed.title}". Active pool: ${seals.length} topics.`);
+            }
+        }
+
+        function closeSealReferenceModal() {
+            document.getElementById('seal-modal').classList.add('hidden');
+            renderAll();
+        }
+
+        function updateSealField(index, field, value) {
+            if (value.trim() || field === 'description' || field === 'scripture') {
+                seals[index][field] = value.trim();
+                saveAppState();
+            }
+        }
+
+        function resetDefaultSeals() {
+            const validDefaultIds = new Set(DEFAULT_SEALS.map(s => s.id));
+            seals = JSON.parse(JSON.stringify(DEFAULT_SEALS));
+
+            // Clear any church assignments that pointed to deleted custom topics
+            churches.forEach(c => {
+                if (c.sealId !== null && !validDefaultIds.has(c.sealId)) {
+                    c.sealId = null;
+                    c.locked = false;
+                    c.standby = false;
+                    c.justRevealed = false;
+                }
+            });
+
+            renderSealEditorList();
+            renderAll();
+            showToast('Reset to the default 7 Seals.');
+        }
+
+        // =========================================================================
+        // 7. EXPORT & CLIPBOARD (MEMO, CSV, PRINT)
+        // =========================================================================
+        function copyResultsToClipboard() {
+            if (churches.length === 0) {
+                showToast('Add churches and assign seals before copying.', 'fa-circle-exclamation');
+                return;
+            }
+
+            const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+            let lines = [
+                `*BIBLE EXPO — SEALS & PRESENTATION TOPICS ASSIGNMENTS*`,
+                `Date: ${dateStr} | Active Pool: ${seals.length} Topics`,
+                `----------------------------------------`
+            ];
+
+            churches.forEach((c, idx) => {
+                const seal = c.sealId ? seals.find(s => s.id === c.sealId) : null;
+                const methodTag = c.locked ? ' [Committee]' : '';
+                if (seal) {
+                    lines.push(`${idx + 1}. *${c.name}*${methodTag}`);
+                    lines.push(`   ↳ ${seal.numberLabel}: ${seal.title} (${seal.scripture})`);
+                } else if (c.standby) {
+                    lines.push(`${idx + 1}. *${c.name}* — Standby / Reserve`);
+                } else {
+                    lines.push(`${idx + 1}. *${c.name}* — Pending Assignment`);
+                }
+            });
+
+            const textToCopy = lines.join('\n');
+
+            // Use textarea + document.execCommand('copy') for reliable iFrame compatibility
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            tempTextArea.style.position = 'fixed';
+            tempTextArea.style.left = '-9999px';
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+
+            try {
+                document.execCommand('copy');
+                showToast('Formatted memo copied to clipboard!');
+            } catch (err) {
+                showToast('Unable to copy automatically. Please use CSV or Print.', 'fa-circle-exclamation');
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+        function downloadCSV() {
+            if (churches.length === 0) {
+                showToast('No church data to export.', 'fa-circle-exclamation');
+                return;
+            }
+
+            const headers = ['Order', 'Church Name', 'Assigned Seal', 'Seal Title', 'Scripture Reference', 'Symbol', 'Assignment Type'];
+            const rows = churches.map((c, idx) => {
+                const seal = c.sealId ? seals.find(s => s.id === c.sealId) : null;
+                const type = c.locked ? 'Committee Locked' : (seal || c.standby ? 'Random Lot Draw' : 'Pending');
+                return [
+                    idx + 1,
+                    `"${c.name.replace(/"/g, '""')}"`,
+                    seal ? `"${seal.numberLabel}"` : (c.standby ? '"Standby"' : '"Unassigned"'),
+                    seal ? `"${seal.title.replace(/"/g, '""')}"` : '""',
+                    seal ? `"${seal.scripture}"` : '""',
+                    seal ? `"${seal.symbol}"` : '""',
+                    `"${type}"`
+                ].join(',');
+            });
+
+            const csvContent = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Seven_Seals_Expo_Assignments_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showToast('Downloaded CSV spreadsheet.');
+        }
+
+        function printAssignments() {
+            if (churches.length === 0) {
+                showToast('Add churches before printing.', 'fa-circle-exclamation');
+                return;
+            }
+            const dateStr = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('print-date-subtitle').textContent = `Generated on ${dateStr} • ${churches.length} Participating Church${churches.length === 1 ? '' : 'es'}`;
+            window.print();
+        }
+    </script>
+</body>
+</html>
